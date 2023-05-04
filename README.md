@@ -13,10 +13,12 @@ on the root path and you're ready to run the scripts.
 
 # src/dindex.csv.js
 
-Builds dfamily, dphylum and dsequence CSV files for all the dark RdRp alignment summaries found on the public serratus S3 bucket.
+Builds dfamily, dphylum and dsequence CSV file tables for all the dark RdRp alignment summaries found in the public serratus S3 bucket.
 
 For usage information, run `node src/dindex.csv.js --help`.
 
 # src/rindex.csv.js
 
-...
+Builds rfamily, rphylum and rsequence CSV file tables for all the RdRp alignment summaries found in the public serratus S3 bucket.
+
+For usage information, run `node src/rindex.csv.js --help`.
