@@ -1,0 +1,9 @@
+{
+    "type": "module",
+    "dependencies": {
+        "csv-stringify": "^6.3.3",
+        "level": "^8.0.0",
+        "minimist": "^1.2.8",
+        "pg": "^8.10.0"
+    }
+}
