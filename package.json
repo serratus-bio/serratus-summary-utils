@@ -4,6 +4,7 @@
         "csv-stringify": "^6.3.3",
         "level": "^8.0.0",
         "minimist": "^1.2.8",
+        "nodemon": "^2.0.22",
         "pg": "^8.10.0"
     }
 }
