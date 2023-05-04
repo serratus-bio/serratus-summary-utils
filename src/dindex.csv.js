@@ -72,7 +72,6 @@ catch(e) {
 
 console.log('dindex.tsv ' + await new Promise(resolve => exec('wc ' + path.join(ARGV['data-dir'], 'dindex.tsv'), (e, so, se) => resolve(so))));
 
-path.join(ARGV['data-dir'], '') //X
 const dIndexLevel = new Level(path.join(ARGV['data-dir'], 'level/dindex'), { valueEncoding:'binary' });
 
 if(ARGV.cache) {
