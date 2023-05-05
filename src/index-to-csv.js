@@ -1,6 +1,6 @@
 import { exec } from 'child_process';
 import { createReadStream, createWriteStream } from 'fs';
-import { access, mkdir } from 'fs/promises';
+import { access, mkdir, readFile } from 'fs/promises';
 import { Level } from 'level';
 import minimist from 'minimist';
 import path from 'path';
@@ -35,6 +35,8 @@ if(ARGV.help) {
   console.log('  n (optional):');
   console.log('    number of records to process');
   console.log('    if not set, it goes through all of them');
+  console.log('  phylum-name-dictionary-path (optional):');
+  console.log('    path for a JSON file used to resolve phylum names');
   console.log('  serratus-s3-endpoint (optional):');
   console.log('    hostname for serratus public data on S3');
   console.log('    default: https://lovelywater2.s3.amazonaws.com');
@@ -56,7 +58,7 @@ if(ARGV.help) {
   console.log('  (dsummmary)');
   console.log('  node index-to-csv.js --data-dir=data --index-path=dindex.tsv --summary-path=dsummary/\\\$ID.psummary --cache --csv');
   console.log('  (rsummmary)');
-  console.log('  node index-to-csv.js --data-dir=data --index-path=rindex.tsv --summary-path=rsummary/\\\$ID.psummary --cache --csv');
+  console.log('  node index-to-csv.js --data-dir=data --index-path=rindex.tsv --summary-path=rsummary/\\\$ID.psummary --phylum-name-dictionary-path=src/rsummary.dictionary.json --cache --csv');
 
   process.exit(0);
 }
@@ -75,6 +77,16 @@ if(!ARGV['index-path']) {
   process.exit(1);
 }
 
+if(ARGV['phylum-name-dictionary-path']) {
+  try { await access(ARGV['phylum-name-dictionary-path']); }
+  catch(e) {
+    console.error('\'phylum-name-dictionary-path\' is either not there or inaccesible');
+    console.log('  see node index-to-csv.js --help');
+
+    process.exit(1);
+  }
+}
+
 if(!ARGV['summary-path']) {
   console.error('You must supply an \'summary-path\' argument');
   console.log('  see node index-to-csv.js --help');
@@ -82,8 +94,14 @@ if(!ARGV['summary-path']) {
   process.exit(1);
 }
 
-const SERRATUS_S3_ENDPOINT = ARGV['serratus-s3-endpoint'] || 'https://lovelywater2.s3.amazonaws.com';
 const INDEX_PATH_MD5 = createHash('md5').update(ARGV['index-path']).digest('hex');
+const SERRATUS_S3_ENDPOINT = ARGV['serratus-s3-endpoint'] || 'https://lovelywater2.s3.amazonaws.com';
+let PHYLUM_NAME_DICTIONARY = undefined;
+if(ARGV['phylum-name-dictionary-path']) {
+  try {
+    PHYLUM_NAME_DICTIONARY = JSON.parse(await readFile(ARGV['phylum-name-dictionary-path']));
+  } catch(e) {}
+}
 
 try { await mkdir(path.join(ARGV['data-dir'])); }
 catch(e) {}
@@ -156,9 +174,9 @@ if(ARGV.csv) {
     try { value = JSON.parse(await promisify(gunzip)(value)); }
     catch(e) { value = null; }
 
-    value.filter(v => v.famcvg).forEach(v => familyCSV.write(famcvgToFamily(v)));
-    value.filter(v => v.phycvg).forEach(v => phylumCSV.write(phycvgToPhylum(v)));
-    value.filter(v => v.vircvg).forEach(v => sequenceCSV.write(vircvgToSequence(v)));
+    value.filter(v => v.famcvg).forEach(v => familyCSV.write(famcvgToFamily(v, { phylumNameDictionary:PHYLUM_NAME_DICTIONARY })));
+    value.filter(v => v.phycvg).forEach(v => phylumCSV.write(phycvgToPhylum(v, { phylumNameDictionary:PHYLUM_NAME_DICTIONARY })));
+    value.filter(v => v.vircvg).forEach(v => sequenceCSV.write(vircvgToSequence(v, { phylumNameDictionary:PHYLUM_NAME_DICTIONARY })));
 
     if(++N%1000 === 0)
       console.log('N', N.toLocaleString());

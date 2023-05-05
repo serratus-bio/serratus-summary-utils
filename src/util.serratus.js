@@ -6,22 +6,14 @@ export const S3 = {
     .catch(() => resolve()))
 };
 
-export const famcvgToFamily = (famcvg, full_phylum_name) => {
+export const famcvgToFamily = (famcvg, args) => {
   const fam = famcvg.fam.split(/\./);
 
   return {
     run_id:famcvg.sra,
     phylum_name:
-      full_phylum_name
-        ? {
-          dupl:'Duplornaviricota',
-          kiti:'Kitrinoviricota',
-          levi:'Lenarviricota',
-          nega:'Negarnaviricota',
-          pisu:'Pisuviricota',
-          rdrp:'Unclassified',
-          var:'Deltavirus'
-        }[fam[0]]
+      args.phylumNameDictionary
+        ? args.phylumNameDictionary[fam[0]]
         : fam[0],
     family_name:fam[1].startsWith('Unc')
       ? fam[1].replace(/^Unc/, 'Unclassified-')
@@ -36,19 +28,11 @@ export const famcvgToFamily = (famcvg, full_phylum_name) => {
   };
 };
 
-export const phycvgToPhylum = (phycvg, full_phylum_name) => ({
+export const phycvgToPhylum = (phycvg, args) => ({
   run_id:phycvg.sra,
   phylum_name:
-    full_phylum_name
-      ? {
-        dupl:'Duplornaviricota',
-        kiti:'Kitrinoviricota',
-        levi:'Lenarviricota',
-        nega:'Negarnaviricota',
-        pisu:'Pisuviricota',
-        rdrp:'Unclassified',
-        var:'Deltavirus'
-      }[phycvg.phy]
+    args.phylumNameDictionary
+      ? args.phylumNameDictionary[phycvg.phy]
       : phycvg.phy,
   coverage_bins:phycvg.phycvg,
   score:phycvg.score,
@@ -60,22 +44,14 @@ export const phycvgToPhylum = (phycvg, full_phylum_name) => ({
 
 export const summaryToObject = summary => summary.split(/\n/).filter(v => !!v).map(v => Object.fromEntries(v.split(/;/).filter(_v => !!_v).map(_v => _v.split(/=(.+)/, 2))));
 
-export const vircvgToSequence = (vircvg, full_phylum_name) => {
+export const vircvgToSequence = (vircvg, args) => {
   const vir = vircvg.vir.split(/\./);
 
   return {
     run_id:vircvg.sra,
     phylum_name:
-      full_phylum_name
-        ? {
-          dupl:'Duplornaviricota',
-          kiti:'Kitrinoviricota',
-          levi:'Lenarviricota',
-          nega:'Negarnaviricota',
-          pisu:'Pisuviricota',
-          rdrp:'Unclassified',
-          var:'Deltavirus'
-        }[vir[0]]
+      args.phylumNameDictionary
+        ? args.phylumNameDictionary[vir[0]]
         : vir[0],
     family_name:vir[1].startsWith('Unc')
       ? vir[1].replace(/^Unc/, 'Unclassified-')
