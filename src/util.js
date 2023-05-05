@@ -43,6 +43,7 @@ export const CSVGzipStream = function(args) {
 
     this.gzip.pipe(this.writeStream);
 };
+
 Object.assign(CSVGzipStream.prototype, {
   end:function() { this.csv.end.apply(this.csv, arguments); },
   write:function() { this.csv.write.apply(this.csv, arguments); }

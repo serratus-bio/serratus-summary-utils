@@ -1,18 +1,9 @@
 export const S3 = {
-  fetchDSummary:async id => {
-    return new Promise(resolve => fetch('https://lovelywater2.s3.amazonaws.com/dsummary/' + id + '.psummary')
-      .then(res => res.status === 200
-        ? res.text().then(resolve)
-        : resolve())
-      .catch(() => resolve()));
-  },
-  fetchRSummary:async id => {
-    return new Promise(resolve => fetch('https://lovelywater2.s3.amazonaws.com/rsummary/' + id + '.psummary')
-      .then(res => res.status === 200
-        ? res.text().then(resolve)
-        : resolve())
-      .catch(() => resolve()));
-  }
+  fetchSummary:async path => new Promise(resolve => fetch('https://lovelywater2.s3.amazonaws.com/' + path)
+    .then(res => res.status === 200
+      ? res.text().then(resolve)
+      : resolve())
+    .catch(() => resolve()))
 };
 
 export const famcvgToFamily = (famcvg, full_phylum_name) => {
@@ -44,6 +35,7 @@ export const famcvgToFamily = (famcvg, full_phylum_name) => {
     aligned_length:famcvg.avgcols
   };
 };
+
 export const phycvgToPhylum = (phycvg, full_phylum_name) => ({
   run_id:phycvg.sra,
   phylum_name:
@@ -65,7 +57,9 @@ export const phycvgToPhylum = (phycvg, full_phylum_name) => ({
   n_reads:phycvg.alns,
   aligned_length:phycvg.avgcols
 });
+
 export const summaryToObject = summary => summary.split(/\n/).filter(v => !!v).map(v => Object.fromEntries(v.split(/;/).filter(_v => !!_v).map(_v => _v.split(/=(.+)/, 2))));
+
 export const vircvgToSequence = (vircvg, full_phylum_name) => {
   const vir = vircvg.vir.split(/\./);
 
