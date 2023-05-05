@@ -44,6 +44,19 @@ export const phycvgToPhylum = (phycvg, args) => ({
 
 export const summaryToObject = summary => summary.split(/\n/).filter(v => !!v).map(v => Object.fromEntries(v.split(/;/).filter(_v => !!_v).map(_v => _v.split(/=(.+)/, 2))));
 
+export const sumzerCommentToRSA = sumzerComment => {
+  const SUMZER_COMMENT = summaryToObject(sumzerComment.SUMZER_COMMENT.replace(/,/g, ';'));
+
+  return {
+    run_id:sumzerComment.sra,
+    read_length:sumzerComment.readlength,
+    genome:SUMZER_COMMENT[0].genome,
+    aligned_reads:sumzerComment.totalalns,
+    date:SUMZER_COMMENT[0].date,
+    truncated:sumzerComment.truncated
+  };
+};
+
 export const vircvgToSequence = (vircvg, args) => {
   const vir = vircvg.vir.split(/\./);
 
