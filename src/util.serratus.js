@@ -44,7 +44,7 @@ export const phycvgToPhylum = (phycvg, args) => ({
 
 export const summaryToObject = summary => summary.split(/\n/).filter(v => !!v).map(v => Object.fromEntries(v.split(/;/).filter(_v => !!_v).map(_v => _v.split(/=(.+)/, 2))));
 
-export const sumzerCommentToRSA = sumzerComment => {
+export const sumzerCommentToSRA = sumzerComment => {
   const SUMZER_COMMENT = summaryToObject(sumzerComment.SUMZER_COMMENT.replace(/,/g, ';'));
 
   return {

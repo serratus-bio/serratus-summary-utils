@@ -11,7 +11,7 @@ import { promisify } from 'util';
 import { constants, gunzip, gzip } from 'zlib';
 
 import { AsyncPool, CSVGzipStream } from './util.js';
-import { S3, famcvgToFamily, phycvgToPhylum, summaryToObject, sumzerCommentToRSA, vircvgToSequence } from './util.serratus.js';
+import { S3, famcvgToFamily, phycvgToPhylum, summaryToObject, sumzerCommentToSRA, vircvgToSequence } from './util.serratus.js';
 import { createHash } from 'crypto';
 
 const ARGV = minimist(process.argv.slice(2));
@@ -97,11 +97,8 @@ if(!ARGV['summary-path']) {
 const INDEX_PATH_MD5 = createHash('md5').update(ARGV['index-path']).digest('hex');
 const SERRATUS_S3_ENDPOINT = ARGV['serratus-s3-endpoint'] || 'https://lovelywater2.s3.amazonaws.com';
 let PHYLUM_NAME_DICTIONARY = undefined;
-if(ARGV['phylum-name-dictionary-path']) {
-  try {
-    PHYLUM_NAME_DICTIONARY = JSON.parse(await readFile(ARGV['phylum-name-dictionary-path']));
-  } catch(e) {}
-}
+if(ARGV['phylum-name-dictionary-path'])
+  try { PHYLUM_NAME_DICTIONARY = JSON.parse(await readFile(ARGV['phylum-name-dictionary-path'])); } catch(e) {}
 
 try { await mkdir(path.join(ARGV['data-dir'])); }
 catch(e) {}
@@ -135,7 +132,7 @@ if(ARGV.cache) {
   for await (const line of createInterface({ input:createReadStream(path.join(ARGV['data-dir'], 'cache', ARGV['index-path'])) })) {
     var m = undefined;
 
-    if((m = line.match(/(\d+)\s+(\S+?)\.psummary$/)) && m[1] > 140) {
+    if((m = line.match(/(\d+)\s+(\S+?)\.psummary$/)) && m[1] > 0) {
       asyncPool.push((m_2 => async () => {
         const summaryPath = ARGV['summary-path'].replace(/\$ID/g, m_2);
 
@@ -169,13 +166,13 @@ if(ARGV.csv) {
   console.time(ARGV['index-path'] + ' (csv)');
   const   familyCSV = new CSVGzipStream({ path:path.join(ARGV['data-dir'], 'out', 'family.csv.gz') });
   const   phylumCSV = new CSVGzipStream({ path:path.join(ARGV['data-dir'], 'out', 'phylum.csv.gz') });
-  const      rsaCSV = new CSVGzipStream({ path:path.join(ARGV['data-dir'], 'out', 'rsa.csv.gz') });
   const sequenceCSV = new CSVGzipStream({ path:path.join(ARGV['data-dir'], 'out', 'sequence.csv.gz') });
+  const      sraCSV = new CSVGzipStream({ path:path.join(ARGV['data-dir'], 'out', 'sra.csv.gz') });
   for await (let [key, value] of indexLevel.iterator()) {
     try { value = JSON.parse(await promisify(gunzip)(value)); }
     catch(e) { value = null; }
 
-    value.filter(v => v.SUMZER_COMMENT).forEach(v => rsaCSV.write(sumzerCommentToRSA(v)));
+    value.filter(v => v.SUMZER_COMMENT).forEach(v => sraCSV.write(sumzerCommentToSRA(v)));
     value.filter(v => v.famcvg).forEach(v => familyCSV.write(famcvgToFamily(v, { phylumNameDictionary:PHYLUM_NAME_DICTIONARY })));
     value.filter(v => v.phycvg).forEach(v => phylumCSV.write(phycvgToPhylum(v, { phylumNameDictionary:PHYLUM_NAME_DICTIONARY })));
     value.filter(v => v.vircvg).forEach(v => sequenceCSV.write(vircvgToSequence(v, { phylumNameDictionary:PHYLUM_NAME_DICTIONARY })));
@@ -188,8 +185,8 @@ if(ARGV.csv) {
   }
   familyCSV.end();
   phylumCSV.end();
-  rsaCSV.end();
   sequenceCSV.end();
+  sraCSV.end();
   console.timeEnd(ARGV['index-path'] + ' (csv)');
 }
 
