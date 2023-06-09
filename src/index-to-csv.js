@@ -46,6 +46,8 @@ if(ARGV.help) {
   console.log();
   console.log('  cache (optional):');
   console.log('    downloads all summary files from S3 to the local cache');
+  console.log('  cache-check (optional):');
+  console.log('    prints out the missing entries (if any) from the cache according to the index');
   console.log('  csv (optional):');
   console.log('    creates family, phylum and sequence files from the local cache');
   console.log('  help (optional):');
@@ -126,7 +128,7 @@ console.log(ARGV['index-path'] + ' ' + await new Promise(resolve => exec('wc ' +
 const indexLevel = new Level(path.join(ARGV['data-dir'], 'level', INDEX_PATH_MD5), { valueEncoding:'binary' });
 
 if(ARGV.cache) {
-  var [N, M] = [0, 0];
+  var [N, O] = [0, 0];
   console.time(ARGV['index-path'] + ' (cache)');
   const asyncPool = new AsyncPool({ n:128 });
   for await (const line of createInterface({ input:createReadStream(path.join(ARGV['data-dir'], 'cache', ARGV['index-path'])) })) {
@@ -149,8 +151,8 @@ if(ARGV.cache) {
           }
         };
 
-        if(++M%1000 === 0)
-          console.log('M', M.toLocaleString(), '/', (asyncPool.push._||[]).length.toLocaleString());
+        if(++O%1000 === 0)
+          console.log('O', O.toLocaleString(), '/', (asyncPool.push._||[]).length.toLocaleString());
       })(m[2]));
 
       if(ARGV.n && ++N > ARGV.n)
@@ -159,6 +161,34 @@ if(ARGV.cache) {
   }
   await asyncPool.flush(true);
   console.timeEnd(ARGV['index-path'] + ' (cache)');
+}
+
+if(ARGV['cache-check']) {
+  var [N, O] = [0, 0];
+  console.time(ARGV['index-path'] + ' (cache-check)');
+  const asyncPool = new AsyncPool({ n:128 });
+  for await (const line of createInterface({ input:createReadStream(path.join(ARGV['data-dir'], 'cache', ARGV['index-path'])) })) {
+    var m = undefined;
+
+    if((m = line.match(/(\d+)\s+(\S+?)\.psummary$/)) && m[1] > 0) {
+      asyncPool.push((m_2 => async () => {
+        const summaryPath = ARGV['summary-path'].replace(/\$ID/g, m_2);
+
+        try { await indexLevel.get(summaryPath); }
+        catch(e) {
+          console.log('X', summaryPath);
+        };
+
+        if(++O%1000 === 0)
+          console.log('O', O.toLocaleString(), '/', (asyncPool.push._||[]).length.toLocaleString());
+      })(m[2]));
+
+      if(ARGV.n && ++N > ARGV.n)
+        break;
+    }
+  }
+  await asyncPool.flush(true);
+  console.timeEnd(ARGV['index-path'] + ' (cache-check)');
 }
 
 if(ARGV.csv) {

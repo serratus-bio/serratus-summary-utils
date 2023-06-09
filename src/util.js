@@ -5,16 +5,17 @@ import { createGzip } from 'zlib';
 export const AsyncPool = function(args) { this.args = args||{}; };
 Object.assign(AsyncPool.prototype, {
   flush:async function(flush) {
-    if(!this.flush.promise && (this.push._||[]).length >= (this.args.n||8) || flush)
-      this.flush.promise = new Promise(async resolve => {
+    if(flush && this.flush.promise)
+      await this.flush.promise;
+
+    if(!this.flush.promise && ((this.push._||[]).length >= (this.args.n||8) || flush))
+      this.flush.promise = (async () => {
         await Promise.all(this.push._.splice(0, (this.args.n||8)).map(v => v()));
 
         delete this.flush.promise;
 
         await this.flush();
-
-        resolve();
-      });
+      })();
     
     return this.flush.promise;
   },
